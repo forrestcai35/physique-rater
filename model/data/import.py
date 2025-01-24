@@ -7,12 +7,13 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 import pandas as pd
+from PIL import Image
 
 # Global variables
-output_csv = "train_classic.csv"
-output_dir = "images/classic/front/processed_classic_front"
-input_dir = "images/classic/front/classic_front"
-index_file = "last_index.txt"  # File to track the last processed index
+output_csv = "model/data/train_classic.csv"
+output_dir = "model/data/images/classic/front/processed_classic_front"
+input_dir = "model/data/images/classic/front/classic_front"
+index_file = "model/data/images/classic/front/last_index.txt"  # File to track the last processed index
 columns = [
     "image_path",
     "arms_score",
@@ -43,14 +44,20 @@ class DataLabelerApp(QWidget):
 
     def load_images(self):
         """Load all image paths from the input directory."""
+        if not os.path.exists(input_dir):
+            QMessageBox.critical(self, "Error", f"Input directory does not exist: {input_dir}")
+            sys.exit()
+
         self.image_paths = [
             os.path.join(input_dir, f)
             for f in os.listdir(input_dir)
-            if f.lower().endswith(('.png', '.jpg', '.jpeg'))
+            if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp','.gif'))  # Include .webp
         ]
+
         if not self.image_paths:
-            QMessageBox.critical(self, "Error", "No images found in the input directory!")
+            QMessageBox.critical(self, "Error", f"No images found in the input directory: {input_dir}")
             sys.exit()
+
 
     def init_ui(self):
         self.setWindowTitle("Data Labeler")
@@ -97,10 +104,23 @@ class DataLabelerApp(QWidget):
             self.finish_processing()
 
     def display_image(self):
-        """Display the current image with better quality."""
+        """Display the current image with better quality and ensure it is in JPG format."""
         image_path = self.image_paths[self.image_index]
+        temp_jpg_path = os.path.splitext(image_path)[0] + ".jpg"
+
+        # Convert to JPG format if not already
+        if not image_path.lower().endswith(".jpg"):
+            try:
+                with Image.open(image_path) as img:
+                    img = img.convert("RGB")  # Convert to RGB mode
+                    img.save(temp_jpg_path, "JPEG")
+                self.image_paths[self.image_index] = temp_jpg_path  # Update the path
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to process {image_path}: {e}")
+                sys.exit()
+
         self.label = QLabel(self)
-        pixmap = QPixmap(image_path)
+        pixmap = QPixmap(temp_jpg_path)
 
         if pixmap.width() > 800 or pixmap.height() > 600:
             pixmap = pixmap.scaled(800, 600, aspectRatioMode=Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation)
@@ -123,8 +143,15 @@ class DataLabelerApp(QWidget):
         new_image_name = f"{self.image_index + 1}.jpg"
         processed_path = os.path.join(output_dir, new_image_name)
 
-        # Move the processed image
-        shutil.move(self.image_paths[self.image_index], processed_path)
+        # Convert the image to JPG format and move it
+        current_image_path = self.image_paths[self.image_index]
+        try:
+            with Image.open(current_image_path) as img:
+                img = img.convert("RGB")  # Ensure RGB mode for JPG compatibility
+                img.save(processed_path, "JPEG")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to save {current_image_path} as JPG: {e}")
+            sys.exit()
 
         # Save scores to CSV
         df = pd.DataFrame(
@@ -141,7 +168,7 @@ class DataLabelerApp(QWidget):
         self.scores = []
         self.save_last_index()
         self.score_page()
-
+        
     def finish_processing(self):
         """Handle cleanup and show completion message."""
         for image_path in self.image_paths[self.image_index:]:
@@ -154,8 +181,10 @@ class DataLabelerApp(QWidget):
         """Load the last processed index from the file."""
         if os.path.exists(index_file):
             with open(index_file, 'r') as f:
-                return int(f.read().strip())
-        return 0
+                content = f.read().strip()
+                if content.isdigit():
+                    return int(content)
+        return 0  # Default to 0 if the file doesn't exist or is invalid
 
     def save_last_index(self):
         """Save the current index to the file."""
@@ -175,3 +204,5 @@ if __name__ == "__main__":
     window = DataLabelerApp()
     window.show()
     sys.exit(app.exec_())
+
+
