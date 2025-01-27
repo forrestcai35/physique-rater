@@ -9,8 +9,8 @@ MODEL_PATH = "saved_models/multi_output_physique.pth"
 
 def predict_scores(model, image_path, transform, device="cpu"):
     """
-    Predicts the 7 scores for a single image.
-    Returns a list or tensor of length 7.
+    Predicts the scores for a single image.
+    Returns a list or tensor.
     """
     model.eval()
     model.to(device)
@@ -20,9 +20,9 @@ def predict_scores(model, image_path, transform, device="cpu"):
     img_tensor = transform(img).unsqueeze(0).to(device)
 
     with torch.no_grad():
-        preds = model(img_tensor)  # shape [1,7]
+        preds = model(img_tensor)  
 
-    return preds.squeeze().cpu().numpy()  # [7, ]
+    return preds.squeeze().cpu().numpy()  
 
 if __name__ == "__main__":
     # Example usage
@@ -31,9 +31,10 @@ if __name__ == "__main__":
     base_transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
-        # Add normalization if used during training
-        # transforms.Normalize(mean=[0.485, 0.456, 0.406],
-        #                      std=[0.229, 0.224, 0.225]),
+
+        # NORMALIZATION FOR TRAINING 
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225]),
     ])
 
     # 2) Rebuild model architecture
@@ -52,8 +53,12 @@ if __name__ == "__main__":
     print("Predicted multi-output scores:")
     print(f"Arms: {scores[0]:.2f}")
     print(f"Chest: {scores[1]:.2f}")
-    print(f"Abs: {scores[2]:.2f}")
-    print(f"Vascularity: {scores[3]:.2f}")
-    print(f"Proportions: {scores[4]:.2f}")
-    print(f"Potential: {scores[5]:.2f}")
-    print(f"Legs: {scores[6]:.2f}")
+    print(f"Shoulders: {scores[2]:.2f}")
+    print(f"Abs: {scores[3]:.2f}")
+    print(f"Legs: {scores[4]:.2f}")
+    print(f"Back: {scores[5]:.2f}")
+    print(f"Definition: {scores[5]:.2f}")
+    print(f"Proportions: {scores[6]:.2f}")
+    print(f"Potential: {scores[7]:.2f}")
+    print(f"Size: {scores[8]:.2f}")
+    print(f"Vascularity: {scores[9]:.2f}")

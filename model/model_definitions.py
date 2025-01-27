@@ -1,15 +1,18 @@
-import torch
 import torch.nn as nn
 from torchvision import models
 
-def build_resnet_multioutput(num_outputs=7):
-    """
-    Builds a ResNet50 pre-trained on ImageNet, modifies final layer to output
-    `num_outputs` continuous values (for multi-output regression).
-    """
+def build_resnet_multioutput(num_outputs=11):
     model = models.resnet50(pretrained=True)
-    # Replace final FC layer
-    num_features = model.fc.in_features
-    model.fc = nn.Linear(num_features, num_outputs)
-
+    
+    # Freeze early layers
+    for param in model.parameters():
+        param.requires_grad = False
+        
+    # Modify final layers
+    model.fc = nn.Sequential(
+        nn.Linear(model.fc.in_features, 256),
+        nn.ReLU(),
+        nn.Dropout(0.2),
+        nn.Linear(256, num_outputs)
+    )
     return model

@@ -18,11 +18,15 @@ columns = [
     "image_path",
     "arms_score",
     "chest_score",
+    "shoulders_score",
     "abs_score",
-    "vascularity",
-    "proportions",
-    "potential",
-    "legs_score"
+    "legs_score",
+    "back_score",
+    "definition_score"
+    "proportions_score",
+    "potential_score",
+    "size_score",
+    "vascularity_score"
 ]
 
 # Ensure the output directory exists
@@ -138,6 +142,7 @@ class DataLabelerApp(QWidget):
                 self.save_score()
         else:
             QMessageBox.critical(self, "Error", "Please enter a valid score!")
+
 
     def save_score(self):
         new_image_name = f"{self.image_index + 1}.jpg"

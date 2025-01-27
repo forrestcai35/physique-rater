@@ -8,7 +8,7 @@ class PhysiqueMultiOutputDataset(Dataset):
     """
     Expects a DataFrame with columns:
       image_path, arms_score, chest_score, abs_score, vascularity_score,
-      proportions_score, potential_score, legs_score
+      proportions_score, potential_score, legs_score, back_score
     """
     def __init__(self, df, transform=None):
         self.df = df.reset_index(drop=True)
@@ -28,16 +28,20 @@ class PhysiqueMultiOutputDataset(Dataset):
         if self.transform:
             image = self.transform(image)
 
-        # 3) Collect the 7 scores
+        # 3) Collect the scores
         scores = [
             float(row["arms_score"]),
             float(row["chest_score"]),
+            float(row["shoulders_score"]),
             float(row["abs_score"]),
-            float(row["vascularity_score"]),
+            float(row["legs_score"]),
+            float(row["back_score"]),
+            float(row["definition_score"]),
             float(row["proportions_score"]),
             float(row["potential_score"]),
-            float(row["legs_score"]),
-        ]
+            float(row["size_score"]),
+            float(row["vascularity_score"])
+            ]
         scores_tensor = torch.tensor(scores, dtype=torch.float32)
 
         return image, scores_tensor
